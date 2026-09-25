@@ -12,6 +12,21 @@ your own installed copy.
 | `11-no-update-check.json` | No in-app release check or electron-updater feed |
 | `12-no-feedback.json` | Feedback dialog does not POST to tenzen.studio |
 
+## Electron fuses
+
+`fuses.json` is written into `Photon Studio.exe` on every `apply` (stock 0.1.21 wire `101100011`,
+hardened `010001001`):
+
+| Fuse | Value | Why |
+|---|---|---|
+| RunAsNode | off | exe can no longer be abused as a Node runtime via `ELECTRON_RUN_AS_NODE` |
+| EnableNodeOptionsEnvironmentVariable | off | `NODE_OPTIONS` ignored |
+| EnableNodeCliInspectArguments | off | no `--inspect` debugger attach |
+| OnlyLoadAppFromAsar | on | a planted `resources\app` folder is not loaded |
+| GrantFileProtocolExtraPrivileges | off | UI loads from Photon's own scheme, not `file://` |
+| EnableCookieEncryption | on | cookie store encrypted with DPAPI |
+| EnableEmbeddedAsarIntegrityValidation | off | must stay off, the patched app.asar has no embedded hash |
+
 ## Use
 
 Requires Python 3 and PowerShell 7. Close Photon first.
@@ -24,13 +39,14 @@ Requires Python 3 and PowerShell 7. Close Photon first.
 .\photon-mod.ps1 update -Installer .\Photon-Studio-x.y.z-win-x64.exe   # offline update
 ```
 
-Stock backups live in `%LOCALAPPDATA%\photon-mod\backup` (last two versions kept). If an update
+Stock `app.asar` and exe backups live in `%LOCALAPPDATA%\photon-mod\backup` (last two versions kept). If an update
 changes code so that an anchor no longer matches, `apply` aborts and leaves the app untouched.
 
 ## Tests
 
 ```powershell
 python tests\test_asar.py
+python tests\test_fuses.py
 ```
 
-Uses the installed `app.asar` (or the newest stock backup) as a read-only fixture.
+Both use the newest stock backup (or the installed files) as a read-only fixture.

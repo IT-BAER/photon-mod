@@ -1,0 +1,9 @@
+{
+  "RunAsNode": false,
+  "EnableCookieEncryption": true,
+  "EnableNodeOptionsEnvironmentVariable": false,
+  "EnableNodeCliInspectArguments": false,
+  "EnableEmbeddedAsarIntegrityValidation": false,
+  "OnlyLoadAppFromAsar": true,
+  "GrantFileProtocolExtraPrivileges": false
+}
