@@ -1,0 +1,12 @@
+{
+  "id": "no-announcements",
+  "description": "Never start the announcement client: no install-ID ping, no view/click tracking, no pushed HTML.",
+  "file": "dist-electron/electron/main.js",
+  "edits": [
+    {
+      "find": "if (process.env.PHOTON_DISABLE_ANNOUNCEMENTS === \"1\" || process.env.PHOTON_PACKAGE_SMOKE === \"1\") return;",
+      "replace": "if (true) return; /* photon-mod: announcements disabled */",
+      "count": 1
+    }
+  ]
+}

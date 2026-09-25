@@ -1,0 +1,12 @@
+{
+  "id": "no-update-check",
+  "description": "Mark in-app updates unsupported: no release check at start or every 6 h, no electron-updater feed. Updates run through photon-mod.ps1 update.",
+  "file": "dist-electron/electron/main.js",
+  "edits": [
+    {
+      "find": "state.supported = !disabled && ",
+      "replace": "state.supported = false /* photon-mod: updates via photon-mod.ps1 */ && ",
+      "count": 1
+    }
+  ]
+}

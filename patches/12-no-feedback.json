@@ -1,0 +1,12 @@
+{
+  "id": "no-feedback",
+  "description": "Feedback dialog returns an error instead of POSTing to tenzen.studio.",
+  "file": "dist-electron/electron/main.js",
+  "edits": [
+    {
+      "find": "async function submitFeedback(request, appVersion) {",
+      "replace": "async function submitFeedback(request, appVersion) {\n  return { ok: false, error: \"Feedback is disabled in this build.\" }; /* photon-mod */",
+      "count": 1
+    }
+  ]
+}
