@@ -1,0 +1,12 @@
+{
+  "id": "ui-statusbar",
+  "description": "Status bar controls are 20px high, so they sit inside the 26px bar with a 3px margin.",
+  "file": "dist/assets/index-*.css",
+  "edits": [
+    {
+      "find": ".status-units .tz-select{width:88px}",
+      "replace": ".status-units .tz-select{width:88px}.status-bar .status-button,.status-bar .status-zoom input,.status-bar .tz-select-trigger{height:20px!important;min-height:20px!important}/* photon-mod */",
+      "count": 1
+    }
+  ]
+}

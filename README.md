@@ -11,6 +11,10 @@ your own installed copy.
 | `10-no-announcements.json` | No install-ID ping, no announcement tracking, no pushed HTML |
 | `11-no-update-check.json` | No in-app release check or electron-updater feed |
 | `12-no-feedback.json` | Feedback dialog does not POST to tenzen.studio |
+| `20-ui-statusbar.json` | Status bar controls 20px high, so they fit inside the 26px bar |
+
+A patch `file` may be a glob (`dist/assets/index-*.css`) for hashed renderer files; it must match
+exactly one packed file that contains the first anchor.
 
 ## Electron fuses
 

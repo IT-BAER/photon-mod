@@ -94,6 +94,29 @@ class AsarTests(unittest.TestCase):
         asar.apply(self.src, dst, [patch])
         self.assertEqual(asar.check(dst, [patch]), {"c": True})
 
+    def test_glob_file_resolves_to_the_one_file_with_the_anchor(self):
+        dst = self.out("glob.asar")
+        anchor = ".status-units .tz-select{width:88px}"
+        patch = {"id": "g", "file": "dist/assets/index-*.css", "edits": [
+            {"find": anchor, "replace": anchor + "/* glob */", "count": 1}]}
+        asar.apply(self.src, dst, [patch])
+        hits = [p for p, e in asar.entries(dst) if p.endswith(".css") and asar._packed(e)
+                and "/* glob */" in asar.read_file(dst, p).decode("utf-8")]
+        self.assertEqual(len(hits), 1)
+        self.assertTrue(hits[0].startswith("dist/assets/index-"))
+        self.assertEqual(asar.check(dst, [patch]), {"g": True})
+        self.assertEqual(asar.check(self.src, [patch]), {"g": False})
+
+    def test_glob_file_must_match_exactly_one_file(self):
+        for anchor in ("{", "no such anchor anywhere"):
+            dst = self.out("globbad.asar")
+            patch = {"id": "gb", "file": "dist/assets/index-*.css", "edits": [
+                {"find": anchor, "replace": "x", "count": 1}]}
+            with self.assertRaises(asar.PatchError) as ctx:
+                asar.apply(self.src, dst, [patch])
+            self.assertIn("gb", str(ctx.exception))
+            self.assertFalse(dst.exists())
+
     def test_repo_patches_apply_to_stock(self):
         patches = [json.loads(p.read_text("utf-8")) for p in sorted((Path(__file__).resolve().parents[1] / "patches").glob("*.json"))]
         self.assertTrue(patches)

@@ -3,6 +3,7 @@
 Unchanged files are copied byte for byte in their original order; unpacked entries stay untouched.
 Usage: asar.py apply SRC DST PATCH.json...   |   asar.py check ASAR PATCH.json...
 """
+import fnmatch
 import hashlib
 import json
 import os
@@ -49,6 +50,17 @@ def read_file(path, name):
         return f.read(entry["size"])
 
 
+def _resolve(files, patch, read, needle):
+    """Exact "file" as is; a glob "file" must match exactly one packed file that contains NEEDLE."""
+    name = patch["file"]
+    if not any(c in name for c in "*?["):
+        return name
+    hits = [p for p, e in files.items() if _packed(e) and fnmatch.fnmatchcase(p, name) and needle in read(p, "replace")]
+    if len(hits) != 1:
+        raise PatchError(f"patch '{patch['id']}': {name} matched {len(hits)} files containing the anchor, expected 1")
+    return hits[0]
+
+
 def _edit(text, patch):
     for i, edit in enumerate(patch["edits"]):
         expected = edit.get("count", 1)
@@ -78,15 +90,18 @@ def apply(src, dst, patches):
     files = dict(_walk(header))
     changed = {}
     with open(src, "rb") as f:
+        def read(name, errors="strict"):
+            if name not in changed:
+                f.seek(base + int(files[name]["offset"]))
+                return f.read(files[name]["size"]).decode("utf-8", errors)
+            return changed[name]
+
         for patch in patches:
-            entry = files.get(patch["file"])
+            name = _resolve(files, patch, read, patch["edits"][0]["find"])
+            entry = files.get(name)
             if entry is None or not _packed(entry):
-                raise PatchError(f"patch '{patch['id']}': {patch['file']} is not a packed file in the archive")
-            text = changed.get(patch["file"])
-            if text is None:
-                f.seek(base + int(entry["offset"]))
-                text = f.read(entry["size"]).decode("utf-8")
-            changed[patch["file"]] = _edit(text, patch)
+                raise PatchError(f"patch '{patch['id']}': {name} is not a packed file in the archive")
+            changed[name] = _edit(read(name), {**patch, "file": name})
 
     new_data = {name: text.encode("utf-8") for name, text in changed.items()}
     layout = sorted((int(e["offset"]), e["size"], name, e) for name, e in files.items() if _packed(e))
@@ -121,12 +136,20 @@ def apply(src, dst, patches):
 
 def check(path, patches):
     """Return {patch id: True if every edit's replacement is present}."""
-    cache, result = {}, {}
+    files, cache, result = dict(entries(path)), {}, {}
+
+    def read(name, errors="strict"):
+        if name not in cache:
+            cache[name] = read_file(path, name).decode("utf-8", errors)
+        return cache[name]
+
     for patch in patches:
-        if patch["file"] not in cache:
-            cache[patch["file"]] = read_file(path, patch["file"]).decode("utf-8")
-        text = cache[patch["file"]]
-        result[patch["id"]] = all(edit["replace"] in text for edit in patch["edits"])
+        try:
+            name = _resolve(files, patch, read, patch["edits"][0]["replace"])
+        except PatchError:
+            result[patch["id"]] = False
+            continue
+        result[patch["id"]] = all(edit["replace"] in read(name) for edit in patch["edits"])
     return result
 
 
